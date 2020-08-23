@@ -5,20 +5,22 @@ const {webkit, chromium, firefox, devices} = require('playwright');
 			headless: false,
 		});
 		const context = await browser.newContext({
-			geolocation: {
-				latitude: 51.5080703,
-				longitude: -0.0993819,
-			},
-			permissions: ['geolocation'],
-			locale: 'de-DE',
-			colorScheme: 'dark',			
 		});
 		const page = await context.newPage();
-		await page.goto('https://overreacted.io');
-		await page.waitForTimeout(1000);
-		await page.emulateMedia({
-			colorScheme: 'light',
-		})
+		page.on('frameattached', frame => console.log('frames: ' + page.frames().length));
+		page.on('framedetached', frame => console.log('frames: ' + page.frames().length));
+		page.on('request', request => console.log(request.method() + ' ' + request.url()));
+		page.on('response', response => console.log(response.status() + ' ' + response.url()));
+		context.route('**/*', route => {
+			if (route.request().frame().parentFrame())
+				route.abort();
+			else
+				route.continue();
+		});
+		await page.goto('https://theverge.com');
+		
+		const page2 = await context.newPage();
+		await page2.goto('https://bbc.com');
 })();
 
 
